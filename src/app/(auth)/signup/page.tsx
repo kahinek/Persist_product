@@ -39,24 +39,24 @@ export default function SignupPage() {
         return;
       }
 
-      // Create organization
+      // Create organization with known ID (avoids RLS SELECT issue)
       const slug = orgName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
 
-      const { data: org, error: orgError } = await supabase
+      const orgId = crypto.randomUUID();
+
+      const { error: orgError } = await supabase
         .from("organizations")
-        .insert({ name: orgName.trim(), slug })
-        .select()
-        .single();
+        .insert({ id: orgId, name: orgName.trim(), slug });
 
       if (orgError) throw orgError;
 
       // Add user as owner
       const { error: memberError } = await supabase
         .from("organization_members")
-        .insert({ org_id: org.id, user_id: user.id, role: "owner" });
+        .insert({ org_id: orgId, user_id: user.id, role: "owner" });
 
       if (memberError) throw memberError;
 
